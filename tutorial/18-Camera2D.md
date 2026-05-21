@@ -694,9 +694,9 @@ HUD desenhada fixa
 
 ---
 
-# O que o aluno aprende de verdade
+# O que você aprende de verdade
 
-O aluno entende:
+voce entende:
 
 ```text
 a câmera NÃO move o jogador
