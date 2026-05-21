@@ -721,9 +721,9 @@ forma mapa completo
 
 ---
 
-# O que o aluno aprende de verdade
+# O que você aprende de verdade
 
-O aluno entende:
+você entende:
 
 ```text
 mapas são dados
