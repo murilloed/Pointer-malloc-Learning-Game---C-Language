@@ -1,0 +1,400 @@
+// =========================================
+// IMPORTS
+// =========================================
+
+// Biblioteca gráfica Raylib
+#include "raylib.h"
+
+// Biblioteca de memória dinâmica
+#include <stdlib.h>
+
+// Biblioteca de printf
+#include <stdio.h>
+
+// =========================================
+// STRUCT BLOCO DE MEMÓRIA
+// =========================================
+
+// Estrutura de cada bloco
+typedef struct BlocoMemoria {
+
+    // Guarda posição X e Y
+    Vector2 posicao;
+
+    // Guarda tamanho do bloco
+    float tamanho;
+
+    // Define se bloco está ativo
+    bool ativo;
+
+} BlocoMemoria;
+
+// =========================================
+// MAIN
+// =========================================
+
+int main(void)
+{
+    // =========================================
+    // JANELA E ÁUDIO
+    // =========================================
+
+    // Cria janela
+    InitWindow(900, 550, "Jogo do PacMan");
+
+    // Inicializa sistema de áudio
+    InitAudioDevice();
+
+    // Define FPS
+    SetTargetFPS(60);
+
+    // =========================================
+    // MÚSICA E EFEITOS SONOROS
+    // =========================================
+
+    // Carrega música de fundo
+    Music musica =
+        LoadMusicStream("freesound_community-playing-pac-man-6783.mp3");
+
+    // Carrega efeito sonoro
+    Sound coleta =
+        LoadSound("coleta.wav");
+
+    // Inicia música
+    PlayMusicStream(musica);
+
+    // =========================================
+    // JOGADOR
+    // =========================================
+
+    // Posição inicial do jogador
+    Vector2 jogador = { 700, 525 };
+
+    // Velocidade do jogador
+    float velocidade = 6.0f;
+
+    // =========================================
+    // CONTROLE DE MEMÓRIA
+    // =========================================
+
+    // Capacidade máxima inicial
+    int capacidade = 5;
+
+    // Quantidade atual
+    int quantidade = 5;
+
+    // Pontuação
+    int pontos = 0;
+
+    // =========================================
+    // MALLOC
+    // =========================================
+
+    // malloc:
+    // cria vetor dinâmico na heap
+    BlocoMemoria *blocos =
+        malloc(capacidade *
+               sizeof(BlocoMemoria));
+
+    // Verifica erro de memória
+    if (blocos == NULL)
+    {
+        // Mostra erro
+        printf("Erro ao alocar memoria!\n");
+
+        // Fecha áudio
+        CloseAudioDevice();
+
+        // Fecha janela
+        CloseWindow();
+
+        return 1;
+    }
+
+    // =========================================
+    // INICIALIZA BLOCOS
+    // =========================================
+
+    for (int i = 0; i < quantidade; i++)
+    {
+        // Posição X aleatória
+        blocos[i].posicao.x =
+            GetRandomValue(50, 750);
+
+        // Posição Y aleatória
+        blocos[i].posicao.y =
+            GetRandomValue(50, 400);
+
+        // Tamanho
+        blocos[i].tamanho = 35;
+
+        // Ativa bloco
+        blocos[i].ativo = true;
+    }
+
+    // =========================================
+    // GAME LOOP
+    // =========================================
+
+    while (!WindowShouldClose())
+    {
+        // =========================================
+        // UPDATE DA MÚSICA
+        // =========================================
+
+        // Atualiza streaming da música
+        UpdateMusicStream(musica);
+
+        // =========================================
+        // INPUT
+        // =========================================
+
+        // Move direita
+        if (IsKeyDown(KEY_RIGHT))
+            jogador.x += velocidade;
+
+        // Move esquerda
+        if (IsKeyDown(KEY_LEFT))
+            jogador.x -= velocidade;
+
+        // Move cima
+        if (IsKeyDown(KEY_UP))
+            jogador.y -= velocidade;
+
+        // Move baixo
+        if (IsKeyDown(KEY_DOWN))
+            jogador.y += velocidade;
+
+        // =========================================
+        // HITBOX DO JOGADOR
+        // =========================================
+
+        Rectangle rectJogador =
+        {
+            jogador.x,
+            jogador.y,
+            40,
+            40
+        };
+
+        // =========================================
+        // COLISÃO
+        // =========================================
+
+        for (int i = 0; i < quantidade; i++)
+        {
+            // Verifica se bloco está ativo
+            if (blocos[i].ativo)
+            {
+                // Hitbox do bloco
+                Rectangle rectBloco =
+                {
+                    blocos[i].posicao.x,
+                    blocos[i].posicao.y,
+                    blocos[i].tamanho,
+                    blocos[i].tamanho
+                };
+
+                // Detecta colisão
+                if (CheckCollisionRecs(
+                        rectJogador,
+                        rectBloco))
+                {
+                    // Desativa bloco
+                    blocos[i].ativo = false;
+
+                    // Aumenta pontuação
+                    pontos++;
+
+                    // Toca som de coleta
+                    PlaySound(coleta);
+                }
+            }
+        }
+
+        // =========================================
+        // REALLOCAÇÃO DINÂMICA
+        // =========================================
+
+        // Quando todos forem coletados
+        if (pontos == quantidade)
+        {
+            // Aumenta capacidade
+            capacidade += 3;
+
+            // Aumenta quantidade
+            quantidade += 3;
+
+            // realloc:
+            // aumenta memória dinamicamente
+            BlocoMemoria *novoEndereco =
+                realloc(blocos,
+                        capacidade *
+                        sizeof(BlocoMemoria));
+
+            // Verifica erro
+            if (novoEndereco == NULL)
+            {
+                printf("Erro ao realocar memoria!\n");
+
+                // Libera memória antiga
+                free(blocos);
+
+                // Libera som
+                UnloadSound(coleta);
+
+                // Libera música
+                UnloadMusicStream(musica);
+
+                // Fecha áudio
+                CloseAudioDevice();
+
+                // Fecha janela
+                CloseWindow();
+
+                return 1;
+            }
+
+            // Atualiza ponteiro
+            blocos = novoEndereco;
+
+            // Inicializa novos blocos
+            for (int i = pontos;
+                 i < quantidade;
+                 i++)
+            {
+                // Nova posição X
+                blocos[i].posicao.x =
+                    GetRandomValue(50, 750);
+
+                // Nova posição Y
+                blocos[i].posicao.y =
+                    GetRandomValue(50, 400);
+
+                // Tamanho
+                blocos[i].tamanho = 25;
+
+                // Ativa bloco
+                blocos[i].ativo = true;
+            }
+        }
+
+        // =========================================
+        // RENDERIZAÇÃO
+        // =========================================
+
+        // Inicia renderização
+        BeginDrawing();
+
+        // Limpa fundo
+        ClearBackground(BLACK);
+
+        // Título
+        DrawText("Jogo do PacMan", 
+                 20,
+                 20,
+                 30,
+               BLACK);
+
+        // Instruções
+        DrawText(
+            "Use as setas para coletar ghosts",
+            20,
+            55,
+            20,
+            SKYBLUE
+        );
+
+        // Mostra pontos
+        DrawText(
+            TextFormat("Pontos: %d", pontos),
+            20,
+            90,
+            20,
+            PURPLE
+        );
+
+        // Mostra quantidade
+        DrawText(
+            TextFormat("Ghosts capturados: %d", 
+                       quantidade),
+            20,
+            115,
+            20,
+           PINK
+        );
+
+        // Mostra capacidade
+        DrawText(
+            TextFormat("Ghosts: %d" ,
+
+                       capacidade),
+            20,
+            140,
+            20,
+            PINK
+        );
+
+        // Desenha jogador
+        DrawCircleV(
+            (Vector2){jogador.x + 25, jogador.y + 25},
+            25,
+            YELLOW
+        );
+
+        // =========================================
+        // DESENHA BLOCOS
+        // =========================================
+
+        for (int i = 0; i < quantidade; i++)
+        {
+            // Verifica se bloco está ativo
+            if (blocos[i].ativo)
+            {
+                // Desenha bloco verde
+                DrawRectangleV(
+                    blocos[i].posicao,
+                    (Vector2)
+                    {
+                        blocos[i].tamanho,
+                        blocos[i].tamanho
+                    },
+                    RED
+                );
+            }
+        }
+
+        // Explicação visual
+        DrawText(
+            "malloc cria | realloc aumenta | free libera",
+            20,
+            410,
+            18,
+            MAROON
+        );
+
+        // Finaliza renderização
+        EndDrawing();
+    }
+
+    // =========================================
+    // FREE
+    // =========================================
+
+    // Libera memória dos blocos
+    free(blocos);
+
+    // Libera efeito sonoro
+    UnloadSound(coleta);
+
+    // Libera música
+    UnloadMusicStream(musica);
+
+    // Fecha sistema de áudio
+    CloseAudioDevice();
+
+    // Fecha janela
+    CloseWindow();
+
+    return 0;
+}
