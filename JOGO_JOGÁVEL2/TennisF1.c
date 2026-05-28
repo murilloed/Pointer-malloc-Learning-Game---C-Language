@@ -115,7 +115,8 @@ int main() {
       game->ball->y += game->ball->speedY;
 
       if ((game->ball->x - game->ball->radius <= 0 && game->ball->speedX < 0) ||
-          (game->ball->x + game->ball->radius >= SCREEN_WIDTH && game->ball->speedX > 0)) {
+          (game->ball->x + game->ball->radius >= SCREEN_WIDTH &&
+           game->ball->speedX > 0)) {
         game->ball->speedX *= -1.0f;
       }
 
